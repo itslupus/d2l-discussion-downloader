@@ -1,4 +1,6 @@
 <?php
+    libxml_use_internal_errors(true);
+
     $token;
     $DEBUG = 0;
 
@@ -30,6 +32,7 @@
 
         // fetch the courses
         curl_setopt($curl, CURLOPT_URL, 'https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606');
+        curl_setopt($curl, CURLOPT_POST, false);
         $result = curl_exec($curl);
         $courseList = fopen(__DIR__ . '/test-courseList.html', 'w+');
         fwrite($courseList, $result);
@@ -56,31 +59,73 @@
         fwrite($courses, $result);
         fclose($courses);
 
+        $json = json_decode(substr($result, 9), false);
+        
+        $dom = new DOMDocument();
+        $dom->loadHTML($json->Payload->Html);
+        $xpath = new DOMXPath($dom);
+
+        $elements = $xpath->query('//a[@class = "d2l-link"]');
+
+        foreach ($elements as $el) {
+            echo("$el->textContent\n");
+
+            $id = explode('/', $el->getAttribute('href'))[4];
+            $url = "https://universityofmanitoba.desire2learn.com/d2l/le/$id/discussions/List";
+            curl_setopt($curl, CURLOPT_URL, $url);
+            curl_setopt($curl, CURLOPT_POST, false);
+            $result = curl_exec($curl);
+            echo("$url\n");
+
+            $course = fopen(__DIR__ . "/test-$id.html", 'w+');
+            fwrite($course, $result);
+            fclose($course);
+
+            $json = json_decode(substr($result, 9), false);
+            
+            $dom->loadHTML($json->Payload->Html);
+            $xpath = new DOMXPath($dom);
+
+            $element = $xpath->query('//div[contains(@class, "d2l-msg-container-text")]');
+            
+            if ($element->length === 0) {
+
+            } else {
+                echo("\tNO DISCUSSIONS\n\n");
+            }
+        }
+
         curl_close($curl);
         fclose($tmpFile);
-    }
+    } else {
+        // require_once 'mpdf/autoload.php';
+        // $mpdf = new \Mpdf\Mpdf();
+        // $mpdf->WriteHTML('hello world');
+        // $mpdf->Output('test.pdf', 'F');
 
-    // require_once 'mpdf/autoload.php';
-    // $mpdf = new \Mpdf\Mpdf();
-    // $mpdf->WriteHTML('hello world');
-    // $mpdf->Output('test.pdf', 'F');
+        $fileName = 'test-359688.html';
+        $fileSize = filesize($fileName);
+        $filePtr = fopen($fileName, "r");
+        $fileContents = fread($filePtr, $fileSize);
+        fclose($filePtr);
 
-    $fileName = 'test-courses.json';
-    $fileSize = filesize($fileName);
-    $filePtr = fopen($fileName, "r");
-    $fileContents = fread($filePtr, $fileSize);
-    $fileContents = substr($fileContents, -($fileSize - 9));
-    fclose($filePtr);
+        $dom = new DOMDocument();
+        $dom->loadHTML($fileContents);
+        $xpath = new DOMXPath($dom);
 
-    $json = json_decode($fileContents, false);
-    
-    $dom = new DOMDocument();
-    $dom->loadHTML($json->Payload->Html);
-    $xpath = new DOMXPath($dom);
+        $forums = $xpath->query('//div[contains(@class, "d2l-forum-list-item")]');
 
-    $elements = $xpath->query('//a[@class = "d2l-link"]');
+        foreach ($forums as $el) {
+            // forum id
+            echo($el->previousSibling->previousSibling->previousSibling->previousSibling->getAttribute('data-forum-id') . "\t");
+            // forum name
+            echo($el->childNodes->item(1)->textContent . "\n");
 
-    foreach ($elements as $el) {
-        echo("Name: $el->textContent\n\t" . $el->getAttribute('href') . "\n");
+            $topics = $xpath->query('//a[@class = "d2l-linkheading-link d2l-clickable d2l-link"]');
+            foreach ($topics as $el) {
+                // topic name
+                echo("\t" . $el->textContent . "\n");
+            }
+        }
     }
 ?>
