@@ -1,0 +1,30 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: Arial;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+header {
+    background-color: lightblue;
+    position: sticky;
+}
+
+main {
+    flex: 1;
+}
+
+footer {
+    background-color: lightblue;
+    height: 2rem;
+}
