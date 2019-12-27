@@ -3,19 +3,19 @@
         private $folderName;
         private $variables = array();
 
-        public function __construct(String $folderName) {
+        public function __construct(string $folderName) {
             $this->folderName = $folderName;
         }
 
-        public function __set(String $key, $value) {
+        public function __set(string $key, $value) {
             $this->variables[$key] = $value;
         }
 
-        public function __get(String $key) {
+        public function __get(string $key) {
             return $this->variables[$key];
         }
 
-        public function render(String $fileName) {
+        public function render(string $fileName) {
             ob_start();
 
             if (file_exists(__DIR__ . GLOBAL_TEMPLATE_PATH . '/' . $this->folderName)) {
