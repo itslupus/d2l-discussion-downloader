@@ -25,6 +25,7 @@
         }
 
         public function setURL(string $url) {
+            $this->url = $url;
             curl_setopt($curl, CURLOPT_URL, $url);
         }
 
