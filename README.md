@@ -7,6 +7,7 @@ D2L Discussion Downloader is written in PHP as a side project for two students.
 This project is written for PHP 7.
 
 #### PHP Extensions
+- `dom`
 - `gd`
 - `mbstring`
 
