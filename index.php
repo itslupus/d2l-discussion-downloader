@@ -1,6 +1,6 @@
 <?php
     require_once(__DIR__ . '/globals.php');
-    require_once(GLOBAL_ROOT_PATH . '/includes/classes/Template.php');
+    require_once(__DIR__ . '/includes/classes/Template.php');
 
     $view = new Template('default');
 

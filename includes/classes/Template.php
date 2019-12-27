@@ -18,11 +18,11 @@
         public function render(String $fileName) {
             ob_start();
 
-            if (file_exists(GLOBAL_ROOT_PATH . GLOBAL_TEMPLATE_PATH . '/' . $this->folderName)) {
-                if (file_exists(GLOBAL_ROOT_PATH . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName)) {
+            if (file_exists(__DIR__ . GLOBAL_TEMPLATE_PATH . '/' . $this->folderName)) {
+                if (file_exists(__DIR__ . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName)) {
                     extract($this->variables);
 
-                    require_once(GLOBAL_ROOT_PATH . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName);
+                    require_once(__DIR__ . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName);
                 }
             }
 

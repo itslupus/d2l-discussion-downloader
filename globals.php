@@ -1,6 +1,4 @@
 <?php
-    define('GLOBAL_ROOT_PATH', __DIR__);
-
     define('GLOBAL_TEMPLATE_PATH',     '/templates');
     define('GLOBAL_WEBMASTER_EMAIL',   'contact[at]itslucas[dot]win');
 
