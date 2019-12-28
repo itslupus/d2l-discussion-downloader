@@ -1,7 +1,7 @@
 # D2L Discussion Downloader
 A prettier way to download discussion posts from Brightspace's Desire2Learn.
 
-D2L Discussion Downloader is written in PHP as a side project for two students as is not affilated with Brightspace or any other organization.
+D2L Discussion Downloader is written in PHP as a side project for two students and is not affilated with Brightspace or any other organization.
 
 ## Requirements
 This project is written for PHP 7.
