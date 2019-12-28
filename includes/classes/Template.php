@@ -16,13 +16,15 @@
         }
 
         public function render(string $fileName) {
+            $root = __DIR__ . '/../../';
+
             ob_start();
 
-            if (file_exists(__DIR__ . GLOBAL_TEMPLATE_PATH . '/' . $this->folderName)) {
-                if (file_exists(__DIR__ . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName)) {
+            if (file_exists($root . GLOBAL_TEMPLATE_PATH . '/' . $this->folderName)) {
+                if (file_exists($root . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName)) {
                     extract($this->variables);
 
-                    require_once(__DIR__ . GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName);
+                    require_once($root. GLOBAL_TEMPLATE_PATH .  '/' . $this->folderName . '/' . $fileName);
                 }
             }
 
