@@ -6,8 +6,6 @@
 
     $view->title = 'title';
     $view->stylePath = $view->getStylePath();
-    // $view->test = 'a<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>';
-    $view->test = 'a';
 
     $view->render('index.php');
 ?>

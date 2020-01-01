@@ -8,20 +8,20 @@ html, body {
 }
 
 body {
-    font-family: Arial;
-    font-size: 16px;
+    font-family: Lato, Helvetica, Arial, sans-serif;
+    font-size: 18px;
     display: flex;
     flex-direction: column;
-    position: relative;
 }
 
-header {
-    background-color: lightblue;
-    position: sticky;
-}
-
-main {
+.row {
     flex: 1;
+    background-color: grey;
+    width: 100%;
+}
+
+.row.welcome > .welcome-text {
+    display: inline;
 }
 
 footer {
