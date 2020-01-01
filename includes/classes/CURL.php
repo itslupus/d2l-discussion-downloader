@@ -44,7 +44,7 @@
          * Set the POST fields to send on a request
          * Input can be an associative array or encoded string
          * 
-         * @param   any     $fields The data to send along with the request
+         * @param   mixed     $fields The data to send along with the request
          */
         public function setFields($fields) {
             curl_setopt($this->curl, CURLOPT_POSTFIELDS, $fields);
