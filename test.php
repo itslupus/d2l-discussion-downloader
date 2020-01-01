@@ -1,131 +1,106 @@
 <?php
-    libxml_use_internal_errors(true);
+    require_once(__DIR__ . '/includes/classes/CURL.php');
 
-    $token;
     $DEBUG = 0;
 
     if ($DEBUG) {
-        $tmpFile = tmpfile();
-        $tmpFilePath = stream_get_meta_data($tmpFile)['uri'];
-        echo($tmpFilePath . "\n");
+        // create new cURL handler object
+        $curlHandler = new CURL();
 
-        // login
-        $curl = curl_init('https://universityofmanitoba.desire2learn.com/d2l/lp/auth/login/login.d2l');
-        curl_setopt($curl, CURLOPT_VERBOSE, true);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, array(
+        // prepare to logon to UMLearn
+        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/lp/auth/login/login.d2l');
+        $curlHandler->setPost(true);
+        $curlHandler->setFields(array(
             'userName' => $_SERVER['argv'][1],
-            'password' => $_SERVER['argv'][2],
-            'loginPath' => '/d2l/login'
+            'password' => $_SERVER['argv'][2]
         ));
-        curl_setopt($curl, CURLOPT_COOKIEJAR, $tmpFilePath);
-        curl_setopt($curl, CURLOPT_COOKIEFILE, $tmpFilePath);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/5.0 (X11; Linux i586; rv:31.0) Gecko/20100101 Firefox/70.0');
+
+        // execute cURL request
+        $result = $curlHandler->execute();
+
+        // make sure we didnt error out or anything, if we did just stop script execution
+        if ($result === false) {
+            exit(0);
+        }
         
-        // get the XSRF token for requests
-        $match;
-        preg_match("/XSRF\.Token\',\'(.*?)\'/", curl_exec($curl), $match);
-        $token = $match[1];
-        echo($token . "\n");
+        //TODO: check here for login success/failure
 
-        // fetch the courses
-        curl_setopt($curl, CURLOPT_URL, 'https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606');
-        curl_setopt($curl, CURLOPT_POST, false);
-        $result = curl_exec($curl);
-        $courseList = fopen(__DIR__ . '/test-courseList.html', 'w+');
-        fwrite($courseList, $result);
-        fclose($courseList);
+        // get the XSRF token for D2L/UMLearn specific requests
+        // is this allowed? ¯\_(ツ)_/¯
+        $XSRF;
+        preg_match('/XSRF\.Token\',\'(.*?)\'/', curl_exec($curl), $match);
+        $XSRF = $XSRF[1];
 
-        // find the id of the form
-        // unfortunately, we have to waste ~28kb of bandwidth to do this as the api will fail without it
+        // prepare to navigate to the course list page
+        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606');
+        $curlHandler->setPost(false);
+
+        // execute cURL request (will return HTML)
+        $result = $curlHandler->execute();
+
+        //DEBUG:
+        // open a new file and write the data
+        $newFile = fopen(__DIR__ . '/test-courseList.html', 'w+');
+        fwrite($newFile, $result);
+        fclose($newFile);
+
+        // now we have to find the id of the form in the HTML
+        // for some reason, the next call to their API fails without it, wasting ~28kb of bandwidth
+
+        // create new DOM object from the previous $result
         $dom = new DOMDocument();
-        libxml_use_internal_errors(true);
         $dom->loadHTML($result);
-        $query = new DOMXPath($dom);
-        $nodes = $query->query('//div[@class="d2l-form d2l-form-nested"]');
-        $id = $nodes->item(0)->getAttribute('id');
-        echo($id . "\n");
+        // using the DOM object we create the node tree
+        $xpath = new DOMXPath($dom);
+        // query for that form element, this will always exist
+        $formElement = $xpath->query('//div[@class="d2l-form d2l-form-nested"]');
 
-        $date = explode(' ', date("Y n j"));
+        // now we have to gather the data to send along with the request, formID being one of them
+        $formID = $formElement->item(0)->getAttribute('id');
+        // get today's date to send along, we are fetching all courses upto today
+        $date = explode(' ', date('Y n j'));
+        // the maximum number of results to return in one request
         $maxPageSize = 100;
-        // actually fetch courses
-        curl_setopt($curl, CURLOPT_URL, 'https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606/GridReloadPartial');
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, "gridPartialInfo\$_type=D2L.LP.Web.UI.Desktop.Controls.GridPartialArgs&gridPartialInfo\$SortingInfo\$SortField=OrgUnitName&gridPartialInfo\$SortingInfo\$SortDirection=0&gridPartialInfo\$NumericPagingInfo\$PageNumber=1&gridPartialInfo\$NumericPagingInfo\$PageSize=$maxPageSize&searchTerm=&status=-1&toStartDate\$Year=$date[0]&toStartDate\$Month=$date[1]&toStartDate\$Day=$date[2]&toStartDate\$Hour=9&toStartDate\$Minute=0&toStartDate\$Second=0&fromStartDate\$Year=$date[0]&fromStartDate\$Month=$date[1]&fromStartDate\$Day=$date[2]&fromStartDate\$Hour=9&fromStartDate\$Minute=0&fromStartDate\$Second=0&toEndDate\$Year=$date[0]&toEndDate\$Month=$date[1]&toEndDate\$Day=$date[2]&toEndDate\$Hour=9&toEndDate\$Minute=0&toEndDate\$Second=0&fromEndDate\$Year=$date[0]&fromEndDate\$Month=$date[1]&fromEndDate\$Day=$date[2]&fromEndDate\$Hour=9&fromEndDate\$Minute=0&fromEndDate\$Second=0&hasToStartDate=False&hasFromStartDate=False&hasToEndDate=False&hasFromEndDate=true&filtersFormId\$Value=$id&_d2l_prc\$headingLevel=2&_d2l_prc\$scope&_d2l_prc\$childScopeCounters=filtersData:0;FromStartDate:0;ToStartDate:0;FromEndDate:0;ToEndDate:0&_d2l_prc\$hasActiveForm=false&filtersData\$semesterId=All&filtersData\$departmentId=All&isXhr=true&requestId=4&d2l_referrer=$token");
-        $result = curl_exec($curl);
-        $courses = fopen(__DIR__ . '/test-courses.json', 'w+');
-        fwrite($courses, $result);
-        fclose($courses);
 
-        $json = json_decode(substr($result, 9), false);
+        // prepare to fetch all courses
+        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606/GridReloadPartial');
+        $curlHandler->setPost(true);
+        $curlHandler->setFields("gridPartialInfo\$_type=D2L.LP.Web.UI.Desktop.Controls.GridPartialArgs&gridPartialInfo\$SortingInfo\$SortField=OrgUnitName&gridPartialInfo\$SortingInfo\$SortDirection=0&gridPartialInfo\$NumericPagingInfo\$PageNumber=1&gridPartialInfo\$NumericPagingInfo\$PageSize=$maxPageSize&searchTerm=&status=-1&toStartDate\$Year=$date[0]&toStartDate\$Month=$date[1]&toStartDate\$Day=$date[2]&toStartDate\$Hour=9&toStartDate\$Minute=0&toStartDate\$Second=0&fromStartDate\$Year=$date[0]&fromStartDate\$Month=$date[1]&fromStartDate\$Day=$date[2]&fromStartDate\$Hour=9&fromStartDate\$Minute=0&fromStartDate\$Second=0&toEndDate\$Year=$date[0]&toEndDate\$Month=$date[1]&toEndDate\$Day=$date[2]&toEndDate\$Hour=9&toEndDate\$Minute=0&toEndDate\$Second=0&fromEndDate\$Year=$date[0]&fromEndDate\$Month=$date[1]&fromEndDate\$Day=$date[2]&fromEndDate\$Hour=9&fromEndDate\$Minute=0&fromEndDate\$Second=0&hasToStartDate=False&hasFromStartDate=False&hasToEndDate=False&hasFromEndDate=true&filtersFormId\$Value=$formID&_d2l_prc\$headingLevel=2&_d2l_prc\$scope&_d2l_prc\$childScopeCounters=filtersData:0;FromStartDate:0;ToStartDate:0;FromEndDate:0;ToEndDate:0&_d2l_prc\$hasActiveForm=false&filtersData\$semesterId=All&filtersData\$departmentId=All&isXhr=true&requestId=1&d2l_referrer=$XSRF");
+
+        // execute request
+        $result = $curlHandler->execute();
+        // delete the first 9 characters of the result
+        // for some reason, the response contains 'while(1);' at the very start before the json
+        $result = substr($result, 9);
         
+        // open new file to write json to
+        $newFile = fopen(__DIR__ . '/test-response.json', 'w+');
+        fwrite($newFile, $result);
+        fclose($newFile);
+
+        // start decoding the JSON to get the links to the courses
+        $json = json_decode($result, false);
+
+        // so the response contains HTML (presumably the HTML that would replace the existing stuff in that form)
+        // we are interested in that HTML
         $dom = new DOMDocument();
         $dom->loadHTML($json->Payload->Html);
         $xpath = new DOMXPath($dom);
 
-        $elements = $xpath->query('//a[@class = "d2l-link"]');
+        // get all the links in that HTML (assuming that all links here are links to course pages)
+        $href = $xpath->query('//a[@class = "d2l-link"]');
 
-        foreach ($elements as $el) {
-            echo("$el->textContent\n");
-
-            $id = explode('/', $el->getAttribute('href'))[4];
-            $url = "https://universityofmanitoba.desire2learn.com/d2l/le/$id/discussions/List";
-            curl_setopt($curl, CURLOPT_URL, $url);
-            curl_setopt($curl, CURLOPT_POST, false);
-            $result = curl_exec($curl);
-            echo("$url\n");
-
-            $course = fopen(__DIR__ . "/test-$id.html", 'w+');
-            fwrite($course, $result);
-            fclose($course);
-
-            $json = json_decode(substr($result, 9), false);
+        // iterate though all the links we find ignoring the first link
+        for ($i = 1; $i < count($href); $i++) {
+            // get the course ID of the link (/d2l/p/home/xxxxxx)
+            // we only need the ID since we can go straight to the dicussions of the course
+            $courseID = explode('/', $href[$i]->getAttribute('href')[4]);
             
-            $dom->loadHTML($json->Payload->Html);
-            $xpath = new DOMXPath($dom);
+            // prepare the jump to hyperspace
+            $curlHandler->setURL("https://universityofmanitoba.desire2learn.com/d2l/le/$id/discussions/List");
+            $curlHandler->setPost(false);
 
-            $element = $xpath->query('//div[contains(@class, "d2l-msg-container-text")]');
-            
-            if ($element->length === 0) {
-
-            } else {
-                echo("\tNO DISCUSSIONS\n\n");
-            }
-        }
-
-        curl_close($curl);
-        fclose($tmpFile);
-    } else {
-        // require_once 'mpdf/autoload.php';
-        // $mpdf = new \Mpdf\Mpdf();
-        // $mpdf->WriteHTML('hello world');
-        // $mpdf->Output('test.pdf', 'F');
-
-        $fileName = 'test-359688.html';
-        $fileSize = filesize($fileName);
-        $filePtr = fopen($fileName, "r");
-        $fileContents = fread($filePtr, $fileSize);
-        fclose($filePtr);
-
-        $dom = new DOMDocument();
-        $dom->loadHTML($fileContents);
-        $xpath = new DOMXPath($dom);
-
-        $forums = $xpath->query('//div[contains(@class, "d2l-forum-list-item")]');
-
-        foreach ($forums as $el) {
-            // forum id
-            echo($el->previousSibling->previousSibling->previousSibling->previousSibling->getAttribute('data-forum-id') . "\t");
-            // forum name
-            echo($el->childNodes->item(1)->textContent . "\n");
-
-            $topics = $xpath->query('//a[@class = "d2l-linkheading-link d2l-clickable d2l-link"]');
-            foreach ($topics as $el) {
-                // topic name
-                echo("\t" . $el->textContent . "\n");
-            }
+            $result = $curlHandler->execute();
         }
     }
 ?>
