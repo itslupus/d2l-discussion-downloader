@@ -13,17 +13,18 @@
         /**
          * @var resource    The temporary cookie file used to store the session cookie
          */
-        private $tempFile;
+        private $tmpFile;
 
         /**
          * CURL object constructor
          */
         public function __construct() {
-            $this->tempFile = tmpfile();
-            $tempFilePath = stream_get_meta_data($this->tmpFile)['uri'];
+            $this->tmpFile = tmpfile();
+            $tmpFilePath = stream_get_meta_data($this->tmpFile)['uri'];
 
+            $this->curl = curl_init();
             curl_setopt($this->curl, CURLOPT_VERBOSE, true);
-            curl_setopt($this->curl, CURLOPT_COOKIEJAR, $tempFilePath);
+            curl_setopt($this->curl, CURLOPT_COOKIEJAR, $tmpFilePath);
             curl_setopt($this->curl, CURLOPT_COOKIEFILE, $tmpFilePath);
             curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
@@ -57,7 +58,7 @@
          */
         public function setURL(string $url) {
             $this->url = $url;
-            curl_setopt($curl, CURLOPT_URL, $url);
+            curl_setopt($this->curl, CURLOPT_URL, $url);
         }
 
         /**
