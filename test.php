@@ -1,9 +1,11 @@
 <?php
     require_once(__DIR__ . '/includes/classes/CURL.php');
 
-    $DEBUG = 0;
+    $LOGIN = 1;
 
-    if ($DEBUG) {
+    if ($LOGIN) {
+        libxml_use_internal_errors(true);
+
         // create new cURL handler object
         $curlHandler = new CURL();
 
@@ -28,8 +30,9 @@
         // get the XSRF token for D2L/UMLearn specific requests
         // is this allowed? ¯\_(ツ)_/¯
         $XSRF;
-        preg_match('/XSRF\.Token\',\'(.*?)\'/', curl_exec($curl), $match);
+        preg_match('/XSRF\.Token\',\'(.*?)\'/', $result, $XSRF);
         $XSRF = $XSRF[1];
+        echo($XSRF . "\n");
 
         // prepare to navigate to the course list page
         $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606');
@@ -40,7 +43,7 @@
 
         //DEBUG:
         // open a new file and write the data
-        $newFile = fopen(__DIR__ . '/test-courseList.html', 'w+');
+        $newFile = fopen(__DIR__ . '/test-courseList.html', 'w');
         fwrite($newFile, $result);
         fclose($newFile);
 
@@ -56,11 +59,15 @@
         $formElement = $xpath->query('//div[@class="d2l-form d2l-form-nested"]');
 
         // now we have to gather the data to send along with the request, formID being one of them
-        $formID = $formElement->item(0)->getAttribute('id');
         // get today's date to send along, we are fetching all courses upto today
-        $date = explode(' ', date('Y n j'));
         // the maximum number of results to return in one request
+        $formID = $formElement->item(0)->getAttribute('id');
+        $date = explode(' ', date('Y n j'));
         $maxPageSize = 100;
+
+        echo($formID . "\n");
+        print_r($date);
+        echo($maxPageSize . "\n");
 
         // prepare to fetch all courses
         $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606/GridReloadPartial');
@@ -73,8 +80,9 @@
         // for some reason, the response contains 'while(1);' at the very start before the json
         $result = substr($result, 9);
         
+        //DEBUG:
         // open new file to write json to
-        $newFile = fopen(__DIR__ . '/test-response.json', 'w+');
+        $newFile = fopen(__DIR__ . '/test-response.json', 'w');
         fwrite($newFile, $result);
         fclose($newFile);
 
@@ -90,17 +98,29 @@
         // get all the links in that HTML (assuming that all links here are links to course pages)
         $href = $xpath->query('//a[@class = "d2l-link"]');
 
-        // iterate though all the links we find ignoring the first link
-        for ($i = 1; $i < count($href); $i++) {
+        // iterate though all the links
+        foreach ($href as $courseElement) {
             // get the course ID of the link (/d2l/p/home/xxxxxx)
             // we only need the ID since we can go straight to the dicussions of the course
-            $courseID = explode('/', $href[$i]->getAttribute('href')[4]);
-            
+            $courseID = explode('/', $courseElement->getAttribute('href'))[4];
+
+            echo("$courseElement->textContent\n");
+            echo("\thttps://universityofmanitoba.desire2learn.com/d2l/le/$courseID/discussions/List\n");
             // prepare the jump to hyperspace
-            $curlHandler->setURL("https://universityofmanitoba.desire2learn.com/d2l/le/$id/discussions/List");
+            $curlHandler->setURL("https://universityofmanitoba.desire2learn.com/d2l/le/$courseID/discussions/List");
             $curlHandler->setPost(false);
 
             $result = $curlHandler->execute();
+
+            //DEDUG:
+            // save temporary discussion page
+            $newFile = fopen(__DIR__ . "/test-$courseID.html", 'w');
+            fwrite($newFile, $result);
+            fclose($newFile);
         }
+
+        //TODO: logout here
+        //https://universityofmanitoba.desire2learn.com/d2l/logout
+        echo("log out\n");
     }
 ?>
