@@ -2,20 +2,18 @@
     require_once(__DIR__ . '/includes/classes/CURL.php');
     require_once(__DIR__ . '/globals.php');
 
-    $LOGIN = 1;
-
-    if ($LOGIN) {
+    if ($_SERVER['argv'][1] === 1) {
         libxml_use_internal_errors(true);
 
         // create new cURL handler object
         $curlHandler = new CURL();
 
         // prepare to logon to UMLearn
-        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/lp/auth/login/login.d2l');
+        $curlHandler->setURL(GLOBAL_URL . '/d2l/lp/auth/login/login.d2l');
         $curlHandler->setPost(true);
         $curlHandler->setFields(array(
-            'userName' => $_SERVER['argv'][1],
-            'password' => $_SERVER['argv'][2]
+            'userName' => $_SERVER['argv'][2],
+            'password' => $_SERVER['argv'][3]
         ));
 
         // execute cURL request
@@ -36,7 +34,7 @@
 echo("[XSRF Token]\t\t$XSRF\n");
 
         // prepare to navigate to the course list page
-        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606');
+        $curlHandler->setURL(GLOBAL_URL . '/d2l/le/manageCourses/search/6606');
         $curlHandler->setPost(false);
 
         // execute cURL request (will return HTML)
@@ -71,7 +69,7 @@ print_r($date);
 echo("[Max Results]\t\t$maxPageSize\n\n");
 
         // prepare to fetch all courses
-        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/manageCourses/search/6606/GridReloadPartial');
+        $curlHandler->setURL(GLOBAL_URL . '/d2l/le/manageCourses/search/6606/GridReloadPartial');
         $curlHandler->setPost(true);
         $curlHandler->setFields("gridPartialInfo\$_type=D2L.LP.Web.UI.Desktop.Controls.GridPartialArgs&gridPartialInfo\$SortingInfo\$SortField=OrgUnitName&gridPartialInfo\$SortingInfo\$SortDirection=0&gridPartialInfo\$NumericPagingInfo\$PageNumber=1&gridPartialInfo\$NumericPagingInfo\$PageSize=$maxPageSize&searchTerm=&status=-1&toStartDate\$Year=$date[0]&toStartDate\$Month=$date[1]&toStartDate\$Day=$date[2]&toStartDate\$Hour=9&toStartDate\$Minute=0&toStartDate\$Second=0&fromStartDate\$Year=$date[0]&fromStartDate\$Month=$date[1]&fromStartDate\$Day=$date[2]&fromStartDate\$Hour=9&fromStartDate\$Minute=0&fromStartDate\$Second=0&toEndDate\$Year=$date[0]&toEndDate\$Month=$date[1]&toEndDate\$Day=$date[2]&toEndDate\$Hour=9&toEndDate\$Minute=0&toEndDate\$Second=0&fromEndDate\$Year=$date[0]&fromEndDate\$Month=$date[1]&fromEndDate\$Day=$date[2]&fromEndDate\$Hour=9&fromEndDate\$Minute=0&fromEndDate\$Second=0&hasToStartDate=False&hasFromStartDate=False&hasToEndDate=False&hasFromEndDate=False&filtersFormId\$Value=$formID&_d2l_prc\$headingLevel=2&_d2l_prc\$scope&_d2l_prc\$childScopeCounters=filtersData:0;FromStartDate:0;ToStartDate:0;FromEndDate:0;ToEndDate:0&_d2l_prc\$hasActiveForm=false&filtersData\$semesterId=All&filtersData\$departmentId=All&isXhr=true&requestId=1&d2l_referrer=$XSRF");
 
@@ -104,10 +102,10 @@ echo("[Max Results]\t\t$maxPageSize\n\n");
             // we only need the ID since we can go straight to the dicussions of the course
             $courseID = explode('/', $courseElement->getAttribute('href'))[4];
 
-echo("$courseElement->textContent\n");
-echo("\t=> https://universityofmanitoba.desire2learn.com/d2l/le/$courseID/discussions/List\n");
+echo("$courseElement->textContent (" . GLOBAL_URL . "/d2l/le/$courseID/discussions/List)\n");
+
             // prepare the jump to hyperspace
-            $curlHandler->setURL("https://universityofmanitoba.desire2learn.com/d2l/le/$courseID/discussions/List");
+            $curlHandler->setURL(GLOBAL_URL . "/d2l/le/$courseID/discussions/List");
             $curlHandler->setPost(false);
 
             $result = $curlHandler->execute();
@@ -122,45 +120,76 @@ echo("\t=> https://universityofmanitoba.desire2learn.com/d2l/le/$courseID/discus
             $dom->loadHTML($result);
             $xpath = new DOMXPath($dom);
 
+            // this element will only exist if there are no discussions available to the user
             $messageElement = $xpath->query('//div[@id = "ForumsTopicsPlaceholder"]/div/div[@class = "d2l-msg-container"]')->item(0);
+            
             if ($messageElement !== null) {
 echo("\t=> this course has no discussion forum(s)\n");
             } else {
+                // get each forum element
                 $forums = $xpath->query('//div[contains(@class, "d2l-forum-list-item")]');
+
+                // iterate through each forum
                 foreach($forums as $forumElement) {
-                    // forum heading stuff
+                    // find the forum heading and subtext (if there is any)
                     $headingElement = $xpath->query('.//h2', $forumElement)->item(0);
                     $subtextElement = $xpath->query('.//div/div/div[contains(@class, "d2l-htmlblock")]', $forumElement)->item(0);
             
-                    // topic table (this contains the topics for this specific forum)
+                    // topic table (this contains the all topics for this specific forum)
                     $tableElement = $xpath->query('.//d2l-table-wrapper/table', $forumElement->parentNode)->item(0);
+                    // find each row in the table
                     $rows = $xpath->query('.//tr[contains(@class, "d2l-grid-row")]', $tableElement);
             
-                    printf("\t=> %s (%s)\n",
-                        $headingElement->textContent,
-                        $subtextElement->textContent
-                    );
+printf("\t=> %s (%s)\n",
+    $headingElement->textContent,
+    $subtextElement->textContent
+);
             
+                    // iterate through each of the rows (each topic)
                     foreach ($rows as $topic) {
                         // topic name
                         $topicElement = $xpath->query('.//a[@class = "d2l-linkheading-link d2l-clickable d2l-link"]', $topic)->item(0);
-                        // topic subtext
+                        // topic subtext (if there is one)
                         $topicSubElement = $xpath->query('.//div[@class = "d2l-htmlblock d2l-htmlblock-deferred d2l-htmlblock-untrusted"]', $topic)->item(0);
-                        
-                        // helper variable
+                        // topic url
+                        $topicURL = GLOBAL_URL . $topicElement->attributes[1]->textContent;
+
+                        // helper variable to find the cells
                         $tdElements = $xpath->query('.//td[@class = "d2l-grid-cell"]', $topic);
                         // number of threads
                         $threadCountElement = $xpath->query('.//div[contains(@class, "d2l-textblock")]', $tdElements->item(0))->item(0);
                         // number of posts
                         $postCountElement = $xpath->query('.//div[contains(@class, "d2l-textblock")]', $tdElements->item(1))->item(0);
             
-                        printf("\t\t=> %s\n\t\t=> %s (%s)\n\t\t\t=> %d threads\n\t\t\t=> %d posts\n",
-                            GLOBAL_URL . $topicElement->attributes[1]->textContent,
-                            $topicElement->textContent,
-                            $topicSubElement->textContent,
-                            $threadCountElement->textContent,
-                            $postCountElement->textContent
-                        );
+printf("\t\t=> %s\n\t\t=> %s (%s)\n",
+    $topicURL,
+    $topicElement->textContent,
+    $topicSubElement->textContent
+);
+
+printf("\t\t\t=> %s\n",
+    ($threadCountElement->textContent > 0) ? 'DOWNLOADING, found threads' : 'IGNORING, no threads found'
+);
+
+                        if ($threadCountElement->textContent > 0) {
+                            // the number of results (threads) to return in this query
+                            $numResults = 5000;
+
+                            $url = str_replace('View', 'ThreadList', $topicURL);
+                            $params = "?inContentTool=False&pageSize=$numResults&pageNumber=1&checkPageNumber=false&isNoneSelected=true&groupFilterOption=0&_d2l_prc\$headingLevel=1&_d2l_prc\$hasActiveForm=false&isXhr=true&requestId=1";
+                            $curlHandler->setURL($url . $params);
+                            $curlHandler->setPost(false);
+                            
+                            // again, we remove the while(1); from the result
+                            $result = $curlHandler->execute();
+                            $result = substr($result, 9);
+
+                            //DEBUG:
+                            $tempName = explode('/', $topicURL);
+                            $file = fopen(__DIR__ . "/test-$tempName[5]-$tempName[8].json", 'w');
+                            fwrite($file, $result);
+                            fclose($file);
+                        }
                     }
                 }
             }
@@ -175,50 +204,25 @@ echo("\n==========\nLOGGED OUT\n==========");
                 - Whatever lives inside this else will not touch the cURL logic above
         */
 
-        $file = fopen(__DIR__ . '/test-359688.html', 'r');
-        $contents = fread($file, filesize('test-359688.html'));
+        $file = fopen(__DIR__ . '/test-358593-107562.json', 'r');
+        $contents = fread($file, filesize('test-358593-107562.json'));
         fclose($file);
     
+        $json = json_decode($contents, false);
+
         $dom = new DOMDocument();
-        $dom->loadHTML($contents);
+        $dom->loadHTML($json->Payload->Html);
         $xpath = new DOMXPath($dom);
         
-        $forums = $xpath->query('//div[contains(@class, "d2l-forum-list-item")]');
-        foreach($forums as $forumElement) {
-            // forum heading stuff
-            $headingElement = $xpath->query('.//h2', $forumElement)->item(0);
-            $subtextElement = $xpath->query('.//div/div/div[contains(@class, "d2l-htmlblock")]', $forumElement)->item(0);
-    
-            // topic table (this contains the topics for this specific forum)
-            $tableElement = $xpath->query('.//d2l-table-wrapper/table', $forumElement->parentNode)->item(0);
-            $rows = $xpath->query('.//tr[contains(@class, "d2l-grid-row")]', $tableElement);
-    
-            printf("%s (%s)\n",
-                $headingElement->textContent,
-                $subtextElement->textContent
-            );
-    
-            foreach ($rows as $topic) {
-                // topic name
-                $topicElement = $xpath->query('.//a[@class = "d2l-linkheading-link d2l-clickable d2l-link"]', $topic)->item(0);
-                // topic subtext
-                $topicSubElement = $xpath->query('.//div[@class = "d2l-htmlblock d2l-htmlblock-deferred d2l-htmlblock-untrusted"]', $topic)->item(0);
-                
-                // helper variable
-                $tdElements = $xpath->query('.//td[@class = "d2l-grid-cell"]', $topic);
-                // number of threads
-                $threadCountElement = $xpath->query('.//div[contains(@class, "d2l-textblock")]', $tdElements->item(0))->item(0);
-                // number of posts
-                $postCountElement = $xpath->query('.//div[contains(@class, "d2l-textblock")]', $tdElements->item(1))->item(0);
-    
-                printf("\t%s\n\t=> %s (%s)\n\t\t=> %d threads and %d posts\n",
-                    $topicElement->attributes[1]->textContent,
-                    $topicElement->textContent,
-                    $topicSubElement->textContent,
-                    $threadCountElement->textContent,
-                    $postCountElement->textContent
-                );
-            }
+        $threads = $xpath->query('//li[contains(@class, "d2l-datalist-simpleitem")]');
+        
+        foreach ($threads as $threadItem) {
+            $threadElement = $xpath->query('.//div/div/div/div/div/div/div/h1/a', $threadItem)->item(0);
+            
+            $threadName = $threadElement->textContent;
+            $threadLink = GLOBAL_URL . $threadElement->attributes[1]->textContent;
+
+            echo("$threadName\n\t=> $threadLink\n");
         }
     }
 ?>
