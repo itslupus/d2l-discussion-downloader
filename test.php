@@ -2,7 +2,7 @@
     require_once(__DIR__ . '/includes/classes/CURL.php');
     require_once(__DIR__ . '/globals.php');
 
-    if ($_SERVER['argv'][1] === 1) {
+    if ($_SERVER['argv'][1] == 1) {
         libxml_use_internal_errors(true);
 
         // create new cURL handler object
@@ -31,7 +31,7 @@
         $XSRF;
         preg_match('/XSRF\.Token\',\'(.*?)\'/', $result, $XSRF);
         $XSRF = $XSRF[1];
-echo("[XSRF Token]\t\t$XSRF\n");
+echo("========================================\nINITIAL LOGIN SEQUENCE\n========================================\n[XSRF Token]\t\t$XSRF\n");
 
         // prepare to navigate to the course list page
         $curlHandler->setURL(GLOBAL_URL . '/d2l/le/manageCourses/search/6606');
@@ -42,7 +42,7 @@ echo("[XSRF Token]\t\t$XSRF\n");
 
         //DEBUG:
         // open a new file and write the data
-        $newFile = fopen(__DIR__ . '/test-courseList.html', 'w');
+        $newFile = fopen(__DIR__ . '/.tests/test-courseList.html', 'w');
         fwrite($newFile, $result);
         fclose($newFile);
 
@@ -81,7 +81,7 @@ echo("[Max Results]\t\t$maxPageSize\n\n");
         
         //DEBUG:
         // open new file to write json to
-        $newFile = fopen(__DIR__ . '/test-response.json', 'w');
+        $newFile = fopen(__DIR__ . '/.tests/test-response.json', 'w');
         fwrite($newFile, $result);
         fclose($newFile);
 
@@ -102,7 +102,7 @@ echo("[Max Results]\t\t$maxPageSize\n\n");
             // we only need the ID since we can go straight to the dicussions of the course
             $courseID = explode('/', $courseElement->getAttribute('href'))[4];
 
-echo("$courseElement->textContent (" . GLOBAL_URL . "/d2l/le/$courseID/discussions/List)\n");
+echo("========================================\n$courseElement->textContent\n" . GLOBAL_URL . "/d2l/le/$courseID/discussions/List\n========================================\n");
 
             // prepare the jump to hyperspace
             $curlHandler->setURL(GLOBAL_URL . "/d2l/le/$courseID/discussions/List");
@@ -112,7 +112,7 @@ echo("$courseElement->textContent (" . GLOBAL_URL . "/d2l/le/$courseID/discussio
 
             //DEDUG:
             // save temporary discussion page
-            $newFile = fopen(__DIR__ . "/test-$courseID.html", 'w');
+            $newFile = fopen(__DIR__ . "/.tests/test-$courseID.html", 'w');
             fwrite($newFile, $result);
             fclose($newFile);
 
@@ -124,7 +124,7 @@ echo("$courseElement->textContent (" . GLOBAL_URL . "/d2l/le/$courseID/discussio
             $messageElement = $xpath->query('//div[@id = "ForumsTopicsPlaceholder"]/div/div[@class = "d2l-msg-container"]')->item(0);
             
             if ($messageElement !== null) {
-echo("\t=> this course has no discussion forum(s)\n");
+echo("NO DISCUSSION FORUMS FOUND\n\n");
             } else {
                 // get each forum element
                 $forums = $xpath->query('//div[contains(@class, "d2l-forum-list-item")]');
@@ -140,7 +140,7 @@ echo("\t=> this course has no discussion forum(s)\n");
                     // find each row in the table
                     $rows = $xpath->query('.//tr[contains(@class, "d2l-grid-row")]', $tableElement);
             
-printf("\t=> %s (%s)\n",
+printf("%s (%s)\n",
     $headingElement->textContent,
     $subtextElement->textContent
 );
@@ -161,19 +161,15 @@ printf("\t=> %s (%s)\n",
                         // number of posts
                         $postCountElement = $xpath->query('.//div[contains(@class, "d2l-textblock")]', $tdElements->item(1))->item(0);
             
-printf("\t\t=> %s\n\t\t=> %s (%s)\n",
-    $topicURL,
+printf("\t%s (%s)\n\t%s\n",
     $topicElement->textContent,
-    $topicSubElement->textContent
-);
-
-printf("\t\t\t=> %s\n",
-    ($threadCountElement->textContent > 0) ? 'DOWNLOADING, found threads' : 'IGNORING, no threads found'
+    $topicSubElement->textContent,
+    $topicURL
 );
 
                         if ($threadCountElement->textContent > 0) {
                             // the number of results (threads) to return in this query
-                            $numResults = 5000;
+                            $numResults = 1000;
 
                             $url = str_replace('View', 'ThreadList', $topicURL);
                             $params = "?inContentTool=False&pageSize=$numResults&pageNumber=1&checkPageNumber=false&isNoneSelected=true&groupFilterOption=0&_d2l_prc\$headingLevel=1&_d2l_prc\$hasActiveForm=false&isXhr=true&requestId=1";
@@ -186,9 +182,54 @@ printf("\t\t\t=> %s\n",
 
                             //DEBUG:
                             $tempName = explode('/', $topicURL);
-                            $file = fopen(__DIR__ . "/test-$tempName[5]-$tempName[8].json", 'w');
+                            $file = fopen(__DIR__ . "/.tests/test-$tempName[5]-$tempName[8].json", 'w');
                             fwrite($file, $result);
                             fclose($file);
+                            
+                            //https://universityofmanitoba.desire2learn.com/d2l/le/$var1/discussions/threads/$var2/PostList?inContentTool=False&pageSize=$numPosts&pageNumber=1&checkPageNumber=false&filters=&isNoneSelected=true&searchText=&markedUnread=false&_d2l_prc\$headingLevel=1&_d2l_prc\$scope=&_d2l_prc\$hasActiveForm=false&isXhr=true&requestId=1
+                            
+                            // now we get the thread replies
+                            $json1 = json_decode($result, false);
+
+                            $dom1 = new DOMDocument();
+                            $dom1->loadHTML($json1->Payload->Html);
+                            $xpath1 = new DOMXPath($dom1);
+                            
+                            $threads = $xpath1->query('//li[contains(@class, "d2l-datalist-simpleitem")]');
+$numThreads = count($threads);
+$currCount = 1;
+                            foreach ($threads as $threadItem) {
+                                $threadElement = $xpath1->query('.//div/div/div/div/div/div/div/h1/a', $threadItem)[0];
+                                
+                                $threadName = $threadElement->textContent;
+                                $threadLink = GLOBAL_URL . $threadElement->attributes[1]->textContent;
+                                
+                                $threadDetailsElement = $xpath1->query('.//div/div/div/div/div/div/div[contains(@class, "d2l-textblock-secondary")]', $threadItem)->item(0);
+                                // $threadContentElement = $xpath1->query('.//div/div/div/div/div/d2l-more-less/div/div/template', $threadItem)[0];
+
+                                // number of posts to get for this thread
+                                $numPosts = 100;
+                                // course ID we can reuse from before
+                                // thread ID
+                                $threadID = explode('/', $threadElement->attributes[1]->textContent)[6];
+
+echo("\t\t=> DOWNLOADING $currCount of $numThreads\n"); $currCount++;
+echo("\t\t   $threadName\n\t\t   $threadDetailsElement->textContent\n\t\t   $threadLink\n");
+
+                                $curlHandler->setURL("https://universityofmanitoba.desire2learn.com/d2l/le/$courseID/discussions/threads/$threadID/PostList?inContentTool=False&pageSize=$numPosts&pageNumber=1&checkPageNumber=false&filters=&isNoneSelected=true&searchText=&markedUnread=false&_d2l_prc\$headingLevel=1&_d2l_prc\$scope=&_d2l_prc\$hasActiveForm=false&isXhr=true&requestId=1");
+                                $curlHandler->setPost(false);
+                                $result = $curlHandler->execute();
+                                $result = substr($result, 9);
+
+                                //DEBUG:
+                                if (is_dir(__DIR__ . "/.tests/$courseID") === false) {
+                                    mkdir(__DIR__ . "/.tests/$courseID");
+                                }
+
+                                $file = fopen(__DIR__ . "/.tests/$courseID/test-$threadID.json", 'w');
+                                fwrite($file, $result);
+                                fclose($file);
+                            }
                         }
                     }
                 }
@@ -198,14 +239,22 @@ printf("\t\t\t=> %s\n",
         //TODO: logout here
         //https://universityofmanitoba.desire2learn.com/d2l/logout
 echo("\n==========\nLOGGED OUT\n==========");
+
+        $curlHandler->setURL('https://universityofmanitoba.desire2learn.com/d2l/le/358593/discussions/threads/716699/View');
+        $curlHandler->setPost(false);
+        $result = $curlHandler->execute();
+
+        $file = fopen(__DIR__ . '/.tests/test-manual.html', 'w');
+        fwrite($file, $result);
+        fclose($file);
     } else {
         /*
                 OFFLINE CONTENT GOES HERE
                 - Whatever lives inside this else will not touch the cURL logic above
         */
 
-        $file = fopen(__DIR__ . '/test-358593-107562.json', 'r');
-        $contents = fread($file, filesize('test-358593-107562.json'));
+        $file = fopen(__DIR__ . '/.tests/test-359688-105977.json', 'r');
+        $contents = fread($file, filesize('.tests/test-359688-105977.json'));
         fclose($file);
     
         $json = json_decode($contents, false);
@@ -217,12 +266,28 @@ echo("\n==========\nLOGGED OUT\n==========");
         $threads = $xpath->query('//li[contains(@class, "d2l-datalist-simpleitem")]');
         
         foreach ($threads as $threadItem) {
-            $threadElement = $xpath->query('.//div/div/div/div/div/div/div/h1/a', $threadItem)->item(0);
+            $threadElement = $xpath->query('.//div/div/div/div/div/div/div/h1/a', $threadItem)[0];
             
             $threadName = $threadElement->textContent;
             $threadLink = GLOBAL_URL . $threadElement->attributes[1]->textContent;
+            
+            $threadDetailsElement = $xpath->query('.//div/div/div/div/div/div/div[contains(@class, "d2l-textblock-secondary")]', $threadItem)->item(0);
+            $threadAuthor = $threadDetailsElement;
 
-            echo("$threadName\n\t=> $threadLink\n");
+            $threadContentElement = $xpath->query('.//div/div/div/div/div/d2l-more-less/div/div/template', $threadItem)[0];
+
+            echo("$threadName\n\t=> $threadLink\n\t=> $threadDetailsElement->textContent\n\t\t=> $threadContentElement->textContent\n");
+
+            // create a new document and iterate through the list of elements in <template>
+            // $newDoc = new DOMDocument();
+            // foreach($threadContentElement->childNodes as $child) {
+            //     // add each child to the new document
+            //     // importNode(true) will include the children of this child
+            //     $newDoc->appendChild($newDoc->importNode($child, true));
+            // }
+
+            // // print the innerHTML of <template>
+            // echo($newDoc->saveHTML() . "=====\n");
         }
     }
 ?>
