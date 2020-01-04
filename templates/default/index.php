@@ -8,23 +8,30 @@
     </head>
     <body>
         <div class = 'row welcome'>
-            <span class = 'iconify icon:mdi:image-outline icon-width:10rem icon-height:10rem'></span>
-            <div class = 'welcome-text'>
-                <h2>Welcome</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ut. </p>
-            </div>
-        </div>
-        <div class  = 'row'>
+            <div><span class = 'iconify icon:mdi:worker icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
             <div>
-                <h2>Different Styles</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse gravida. </p>
+                <h1>Under Construction</h1>
+                <p>This site is currently in the makings!</p>
             </div>
         </div>
-        <div class  = 'row'>
-            three
+        <div class = 'row'>
+            <div class = 'centered'>
+                <h2>styles</h2>
+                <p>check out some dank styles we have</p>
+            </div>
+            <div class = 'row-display'>
+                <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
+                <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
+                <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
+            </div>
         </div>
     </body>
     <footer>
-        footer stuff
+        <div>
+            element one
+        </div>
+        <div>
+            element two
+        </div>
     </footer>
 </html>

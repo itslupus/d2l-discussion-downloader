@@ -16,15 +16,53 @@ body {
 
 .row {
     flex: 1;
-    background-color: grey;
     width: 100%;
+    padding: 1rem 0 1rem 0;
 }
 
-.row.welcome > .welcome-text {
-    display: inline;
+.row:nth-of-type(even) {
+    background-color: lightgrey;
+}
+
+.row.welcome {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.row.welcome > div {
+    flex: 1;
+}
+
+.row.welcome > div:nth-child(1) {
+    text-align: right;
+    margin-right: 5rem;
+}
+
+.row-display {
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+}
+
+.row-display > div {
+    flex: 1;
+}
+
+.centered {
+    text-align: center;
 }
 
 footer {
-    background-color: lightblue;
-    height: 2rem;
+    background-color: black;
+    color: #f3f3f3;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+footer > div {
+    flex: 1;
+    padding: 2rem 0 2rem 0;
 }
