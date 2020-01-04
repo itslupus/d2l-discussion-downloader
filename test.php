@@ -226,7 +226,11 @@ echo("\t\t   $threadName\n\t\t   $threadDetailsElement->textContent\n\t\t   $thr
                                     mkdir(__DIR__ . "/.tests/$courseID");
                                 }
 
-                                $file = fopen(__DIR__ . "/.tests/$courseID/test-$threadID.json", 'w');
+                                if (is_dir(__DIR__ . "/.tests/$courseID/$tempName[8]") === false) {
+                                    mkdir(__DIR__ . "/.tests/$courseID/$tempName[8]");
+                                }
+
+                                $file = fopen(__DIR__ . "/.tests/$courseID/$tempName[8]/test-$threadID.json", 'w');
                                 fwrite($file, $result);
                                 fclose($file);
                             }
