@@ -39,22 +39,12 @@
         }
 
         /**
-         * Sets the POST option for cURL execution
-         * Set to false to set to GET, true for POST
-         * 
-         * @param   string  $post   True to set method to POST
-         */
-        public function setPOST(bool $post) {
-            curl_setopt($this->curl, CURLOPT_POST, $post);
-        }
-
-        /**
          * Set the POST fields to send on a request
          * Input can be an associative array or encoded string
          * 
          * @param   mixed     $fields The data to send along with the request
          */
-        public function setFields($fields) {
+        public function setPOSTFields($fields) {
             curl_setopt($this->curl, CURLOPT_POSTFIELDS, $fields);
         }
 
@@ -75,6 +65,17 @@
          */
         public function execute() {
             return curl_exec($this->curl);
+        }
+
+        /**
+         * Retrieves information about the previous transfer by constant
+         * 
+         * @param   int     $option The option (a constant)
+         * 
+         * @return  mixed           Returns null on no info
+         */
+        public function getInfo(int $option) {
+            return curl_getinfo($this->curl, $option);
         }
     }
 ?>
