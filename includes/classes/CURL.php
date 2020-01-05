@@ -32,6 +32,13 @@
         }
 
         /**
+         * CURL object destructor
+         */
+        public function __destruct() {
+            curl_close($this->curl);
+        }
+
+        /**
          * Sets the POST option for cURL execution
          * Set to false to set to GET, true for POST
          * 
