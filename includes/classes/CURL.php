@@ -15,6 +15,8 @@
          */
         private $tmpFile;
 
+        private $transfer;
+
         /**
          * CURL object constructor
          */
@@ -36,6 +38,7 @@
          */
         public function __destruct() {
             curl_close($this->curl);
+            echo("\n\n" . ($this->transfer / 1000000.0) . " MB\n\n");
         }
 
         /**
@@ -64,7 +67,11 @@
          * @return  mixed           Returns the standard curl_exec() result
          */
         public function execute() {
-            return curl_exec($this->curl);
+            $temp = curl_exec($this->curl);
+
+            $this->transfer += curl_getinfo($this->curl, CURLINFO_SIZE_DOWNLOAD);
+
+            return $temp;
         }
 
         /**
