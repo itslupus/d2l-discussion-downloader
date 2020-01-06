@@ -23,3 +23,5 @@ git clone https://github.com/stickman147147/d2l-discussion-downloader.git
 Once the project has been downloaded, open `globals.php` and modify the constants as you see fit.
 
 To run the project, one can simply use the PHP CLI.
+
+Look mom
