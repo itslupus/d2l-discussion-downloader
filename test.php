@@ -18,11 +18,6 @@
         // execute cURL request
         $result = $curlHandler->execute();
 
-        // make sure we didnt error out or anything, if we did just stop script execution
-        // if ($result === false) {
-        //     exit(0);
-        // }
-
         //https://universityofmanitoba.desire2learn.com/d2l/lp/auth/login/loginFailed.d2l?status=BAD_CREDENTIAL
         // also check to make sure we logged in correctly
         $redirURL = $curlHandler->getInfo(CURLINFO_EFFECTIVE_URL);
