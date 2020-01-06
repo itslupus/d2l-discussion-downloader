@@ -24,4 +24,3 @@ Once the project has been downloaded, open `globals.php` and modify the constant
 
 To run the project, one can simply use the PHP CLI.
 
-Look mom
