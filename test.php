@@ -102,6 +102,8 @@ echo("[Max Results]\t\t$maxPageSize\n\n");
             // we only need the ID since we can go straight to the dicussions of the course
             $courseID = explode('/', $courseElement->getAttribute('href'))[4];
 
+            if ($courseID == 359688) continue;
+            
 echo("========================================\n$courseElement->textContent\n" . GLOBAL_URL . "/d2l/le/$courseID/discussions/List\n========================================\n");
 
             // prepare the jump to hyperspace

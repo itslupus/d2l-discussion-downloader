@@ -27,7 +27,7 @@
                     <h2>styles</h2>
                     <p>check out some dank styles we have</p>
                 </div>
-                <div class = 'row-display'>
+                <div class = 'row-inline centered'>
                     <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
                     <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
                     <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
@@ -38,7 +38,7 @@
                     <h2>some other row</h2>
                     <p>something else</p>
                 </div>
-                <div class = 'row-display'>
+                <div class = 'row-inline'>
                     <div><span class = 'iconify icon:mdi:file icon-inline:false icon-width:10rem icon-height:10rem'></span></div>
                 </div>
             </div>

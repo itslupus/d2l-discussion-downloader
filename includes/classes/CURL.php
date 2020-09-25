@@ -25,7 +25,7 @@
             $tmpFilePath = stream_get_meta_data($this->tmpFile)['uri'];
 
             $this->curl = curl_init();
-            curl_setopt($this->curl, CURLOPT_VERBOSE, true);
+            //curl_setopt($this->curl, CURLOPT_VERBOSE, true);
             curl_setopt($this->curl, CURLOPT_COOKIEJAR, $tmpFilePath);
             curl_setopt($this->curl, CURLOPT_COOKIEFILE, $tmpFilePath);
             curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
