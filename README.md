@@ -1,26 +1,16 @@
 # D2L Discussion Downloader
-A prettier way to download discussion posts from Brightspace's Desire2Learn.
+This project used to be part of something larger but I abandoned it (like all my other projects). The only usable part of this project saves the HTML of all discussions it finds in a JSON file (which is retrieved from D2L).  
 
-D2L Discussion Downloader is written in PHP as a side project for two students and is not affilated with Brightspace or any other organization.
+You can view the other files that were in this repository in the commit history.  
 
-## Requirements
-This project is written for PHP 7.
+This project is not affilated with Brightspace or the University of Manitoba.
 
-#### PHP Extensions
-- `dom`
-- `gd`
-- `mbstring`
+### Requirements
+This project is written for PHP 7. The following extensions are required:
+- `xml`
 
-#### PHP Libraries
-- `mpdf >= 8.0.3`
-
-## Usage
-Download the project first by downloading it from the GitHub repository or by using the following command:
+### Usage
 ```
-git clone https://github.com/stickman147147/d2l-discussion-downloader.git
+php -f test.php 1 <umnetid> <password>
 ```
-
-Once the project has been downloaded, open `globals.php` and modify the constants as you see fit.
-
-To run the project, one can simply use the PHP CLI.
-
+The files will be placed in a hidden directory `.tests` in the same folder of the script.
